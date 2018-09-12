@@ -18,6 +18,23 @@
              (get routes :default)))
     (if r ((middleware r) req) 404)))
 
+(defn logger
+  "Creates a logging middleware"
+  [nextmw]
+  (fn [req]
+    (def {:uri uri
+          :protocol proto
+          :method method
+          :query-string qs} req)
+    (def start-clock (os.clock))
+    (def start-time (os.time))
+    (def ret (nextmw req))
+    (def end-clock (os.clock))
+    (def fulluri (if (< 0 (length qs)) (string uri "?" qs) uri))
+    (def elapsed (int (* 1000 (- end-clock start-clock))))
+    (print proto " " method " " fulluri  " timestamp " start-time " elapsed " elapsed "ms")
+    ret))
+
 (defn server 
   "Creates a simple http server"
   [port handler]
