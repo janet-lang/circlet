@@ -31,8 +31,9 @@
     (def ret (nextmw req))
     (def end-clock (os.clock))
     (def fulluri (if (< 0 (length qs)) (string uri "?" qs) uri))
-    (def elapsed (int (* 1000 (- end-clock start-clock))))
-    (print proto " " method " " fulluri  " timestamp " start-time " elapsed " elapsed "ms")
+    (def elapsed (string.number (* 1000 (- end-clock start-clock)) :f 3))
+    (def status (or (get ret :status) 200))
+    (print proto " " method " " status " " fulluri  " at " start-time " elapsed " elapsed "ms")
     ret))
 
 (defn server 

@@ -91,21 +91,6 @@ static void send_http(struct mg_connection *c, Janet res) {
         default:
             mg_send_head(c, 500, 0, "");
             break;
-        case JANET_INTEGER:
-            mg_send_head(c, janet_unwrap_integer(res), 0, "");
-            break;
-        case JANET_STRING:
-        case JANET_BUFFER:
-            {
-                const uint8_t *bytes;
-                int32_t len;
-                janet_bytes_view(res, &bytes, &len);
-                mg_printf(c, 
-                        "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
-                        "Content-Type: text/plain\r\n\r\n%s", 
-                        len, (const char *) bytes);
-                break;
-            }
         case JANET_TABLE:
         case JANET_STRUCT:
             {
