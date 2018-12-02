@@ -10,7 +10,7 @@
 ````)
 
 # Now build our server
-(circlet.server 
+(circlet/server 
   8000
   (->
       {"/thing" {:status 200
@@ -19,5 +19,5 @@
        :default {:status 404
                  :headers {"Content-Type" "text/html"}
                  :body body}}
-      circlet.router
-      circlet.logger))
+      circlet/router
+      circlet/logger))

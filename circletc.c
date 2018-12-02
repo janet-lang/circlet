@@ -215,10 +215,10 @@ static int cfun_bind_http(JanetArgs args) {
 }
 
 static const JanetReg cfuns[] = {
-    {"manager", cfun_manager},
-    {"poll", cfun_poll},
-    {"bind-http", cfun_bind_http},
-    {NULL, NULL}
+    {"manager", cfun_manager, NULL},
+    {"poll", cfun_poll, NULL},
+    {"bind-http", cfun_bind_http, NULL},
+    {NULL, NULL, NULL}
 };
 
 JANET_MODULE_ENTRY (JanetArgs args) {
