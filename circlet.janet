@@ -45,6 +45,6 @@
     (print "Circlet server listening on port " port "...")
     (var req (yield nil))
     (while true
-      (:= req (yield (mw req)))))
+      (set req (yield (mw req)))))
   (cc/bind-http mgr (string port) evloop)
   (while true (cc/poll mgr 2000)))
