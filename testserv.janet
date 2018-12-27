@@ -4,7 +4,7 @@
   ````<!doctype html>
 <html>
 <body>
-  Nope.
+Not Found.
 </body>
 </html>
 ````)

@@ -1,6 +1,6 @@
 # circlet
 
-Circlet is an HTTP and networking library for the [janet](https://github.com/bakpakin/janet) language.
+Circlet is an HTTP and networking library for the [janet](https://github.com/janet-lang/janet) language.
 It provides an abstraction out of the box like Clojure's [ring](https://github.com/ring-clojure/ring), which
 is a server abstraction that makes it easy to build composable web applications.
 
@@ -10,10 +10,13 @@ of mongoose make it very easy to embed in other C programs and libraries.
 
 # Building
 
-Building requires [janet](https://github.com/bakpakin/janet) to be installed on the system.
+Building requires [janet](https://github.com/janet-lang/janet) to be installed on the system.
 
-On Linux and macos systems, just run `make` to build, and `make install` to install to
-the configured janet path (`JANET_PATH`).
+Use the build.janet script to build like
+
+```sh
+janet build.janet
+```
 
 # Example
 
@@ -34,5 +37,5 @@ The below example starts a very simple web server on port 8000.
 
 # License
 
-Unlike [janet](https://github.com/bakpakin/janet), circlet is licensed under
+Unlike [janet](https://github.com/janet-lang/janet), circlet is licensed under
 the GPL license in accordance with mongoose. 
