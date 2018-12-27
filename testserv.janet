@@ -1,4 +1,4 @@
-(import circlet)
+(import build/circlet :as circlet)
 
 (def body
   ````<!doctype html>

@@ -221,8 +221,15 @@ static const JanetReg cfuns[] = {
     {NULL, NULL, NULL}
 };
 
+extern const unsigned char *circlet_lib_embed;
+extern size_t circlet_lib_embed_size;
+
 JANET_MODULE_ENTRY (JanetArgs args) {
     JanetTable *env = janet_env(args);
-    janet_cfuns(env, "mongoose", cfuns);
-    return 0;
+    janet_cfuns(env, "circlet", cfuns);
+    return janet_dobytes(env, 
+            circlet_lib_embed,
+            circlet_lib_embed_size,
+            "circlet_lib.janet",
+            NULL);
 }

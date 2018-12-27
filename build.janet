@@ -1,5 +1,6 @@
 (import cook)
 
 (cook/make-native
-    :name "circletc"
-    :source @["circletc.c" "mongoose.c"])
+    :name "circlet"
+    :embedded @["circlet_lib.janet"]
+    :source @["circlet.c" "mongoose.c"])

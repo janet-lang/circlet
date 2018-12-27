@@ -1,6 +1,4 @@
-# Generates code that can be serialized
-
-(import circletc :as cc)
+# This is embedded, so all circlet functions are available
 
 (defn middleware
   "Coerce any type to http middleware"
@@ -39,12 +37,12 @@
 (defn server 
   "Creates a simple http server"
   [port handler]
-  (def mgr (cc/manager))
+  (def mgr (manager))
   (def mw (middleware handler))
   (defn evloop []
     (print "Circlet server listening on port " port "...")
     (var req (yield nil))
     (while true
       (set req (yield (mw req)))))
-  (cc/bind-http mgr (string port) evloop)
-  (while true (cc/poll mgr 2000)))
+  (bind-http mgr (string port) evloop)
+  (while true (poll mgr 2000)))
