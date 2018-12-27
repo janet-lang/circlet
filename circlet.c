@@ -105,7 +105,7 @@ static void send_http(struct mg_connection *c, Janet res) {
                 int code;
                 if (janet_checktype(status, JANET_NIL))
                     code = 200;
-                else if (janet_checktype(status, JANET_INTEGER))
+                else if (janet_checkint(status))
                     code = janet_unwrap_integer(status);
                 else
                     break;
