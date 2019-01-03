@@ -18,7 +18,7 @@ static int connection_mark(void *p, size_t size) {
 }
 
 static struct JanetAbstractType Connection_jt = {
-    ":mongoose.connection",
+    "mongoose.connection",
     NULL,
     connection_mark
 };
@@ -45,7 +45,7 @@ static int manager_mark(void *p, size_t size) {
 }
 
 static struct JanetAbstractType Manager_jt = {
-    ":mongoose.manager",
+    "mongoose.manager",
     manager_gc,
     manager_mark
 };
@@ -66,12 +66,12 @@ static Janet mg2janetstr(struct mg_str str) {
 
 static Janet build_http_request(struct mg_connection *c, struct http_message *hm) {
     JanetTable *payload = janet_table(10);
-    janet_table_put(payload, janet_csymbolv(":body"), mg2janetstr(hm->body));
-    janet_table_put(payload, janet_csymbolv(":uri"), mg2janetstr(hm->uri));
-    janet_table_put(payload, janet_csymbolv(":query-string"), mg2janetstr(hm->query_string));
-    janet_table_put(payload, janet_csymbolv(":method"), mg2janetstr(hm->method));
-    janet_table_put(payload, janet_csymbolv(":protocol"), mg2janetstr(hm->proto));
-    janet_table_put(payload, janet_csymbolv(":connection"), janet_wrap_abstract(c->user_data));
+    janet_table_put(payload, janet_ckeywordv("body"), mg2janetstr(hm->body));
+    janet_table_put(payload, janet_ckeywordv("uri"), mg2janetstr(hm->uri));
+    janet_table_put(payload, janet_ckeywordv("query-string"), mg2janetstr(hm->query_string));
+    janet_table_put(payload, janet_ckeywordv("method"), mg2janetstr(hm->method));
+    janet_table_put(payload, janet_ckeywordv("protocol"), mg2janetstr(hm->proto));
+    janet_table_put(payload, janet_ckeywordv("connection"), janet_wrap_abstract(c->user_data));
     /* Add headers */
     JanetTable *headers = janet_table(5);
     for (int i = 0; i < MG_MAX_HTTP_HEADERS; i++) {
@@ -81,7 +81,7 @@ static Janet build_http_request(struct mg_connection *c, struct http_message *hm
                 mg2janetstr(hm->header_names[i]),
                 mg2janetstr(hm->header_values[i]));
     }
-    janet_table_put(payload, janet_csymbolv(":headers"), janet_wrap_table(headers));
+    janet_table_put(payload, janet_ckeywordv("headers"), janet_wrap_table(headers));
     return janet_wrap_table(payload);
 }
 
@@ -98,9 +98,9 @@ static void send_http(struct mg_connection *c, Janet res) {
                 int32_t kvlen, kvcap;
                 janet_dictionary_view(res, &kvs, &kvlen, &kvcap);
 
-                Janet status = janet_dictionary_get(kvs, kvcap, janet_csymbolv(":status"));
-                Janet headers = janet_dictionary_get(kvs, kvcap, janet_csymbolv(":headers"));
-                Janet body = janet_dictionary_get(kvs, kvcap, janet_csymbolv(":body"));
+                Janet status = janet_dictionary_get(kvs, kvcap, janet_ckeywordv("status"));
+                Janet headers = janet_dictionary_get(kvs, kvcap, janet_ckeywordv("headers"));
+                Janet body = janet_dictionary_get(kvs, kvcap, janet_ckeywordv("body"));
 
                 int code;
                 if (janet_checktype(status, JANET_NIL))
