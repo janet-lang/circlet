@@ -50,14 +50,12 @@ static struct JanetAbstractType Manager_jt = {
     manager_mark
 };
 
-static int cfun_poll(JanetArgs args) {
-    struct mg_mgr *mgr;
-    int32_t wait;
-    JANET_FIXARITY(args, 2);
-    JANET_ARG_ABSTRACT(mgr, args, 0, &Manager_jt);
-    JANET_ARG_INTEGER(wait, args, 1);
+static Janet cfun_poll(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    struct mg_mgr *mgr = janet_getabstract(argv, 0, &Manager_jt);
+    int32_t wait = janet_getinteger(argv, 1);
     mg_mgr_poll(mgr, wait);
-    JANET_RETURN_ABSTRACT(args, mgr);
+    return argv[0];
 }
 
 static Janet mg2janetstr(struct mg_str str) {
@@ -173,26 +171,23 @@ static void http_handler(struct mg_connection *c, int ev, void *p) {
     send_http(c, out);
 }
 
-static int cfun_manager(JanetArgs args) {
+static Janet cfun_manager(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 0);
+    (void) argv;
     void *mgr = janet_abstract(&Manager_jt, sizeof(struct mg_mgr));
     mg_mgr_init(mgr, NULL);
-    JANET_RETURN_ABSTRACT(args, mgr);
+    return janet_wrap_abstract(mgr);
 }
 
 /* Common functionality for binding */
-static int do_bind(JanetArgs args, struct mg_connection **connout,
+static void do_bind(int32_t argc, Janet *argv, struct mg_connection **connout,
         void (*handler)(struct mg_connection *, int, void *)) {
-    struct mg_mgr *mgr;
-    struct mg_connection *conn;
-    const uint8_t *port;
-    JanetFunction *onConnection;
-    JanetFiber *fiber;
-    JANET_FIXARITY(args, 3);
-    JANET_ARG_ABSTRACT(mgr, args, 0, &Manager_jt);
-    JANET_ARG_STRING(port, args, 1);
-    JANET_ARG_FUNCTION(onConnection, args, 2);
-    conn = mg_bind(mgr, (const char *)port, handler);
-    fiber = janet_fiber(onConnection, 64);
+    janet_fixarity(argc, 3);
+    struct mg_mgr *mgr = janet_getabstract(argv, 0, &Manager_jt);
+    const uint8_t *port = janet_getstring(argv, 1);
+    JanetFunction *onConnection = janet_getfunction(argv, 2);
+    struct mg_connection *conn = mg_bind(mgr, (const char *)port, handler);
+    JanetFiber *fiber = janet_fiber(onConnection, 64);
     ConnectionWrapper *cw = janet_abstract(&Connection_jt, sizeof(ConnectionWrapper));
     cw->conn = conn;
     cw->fiber = fiber;
@@ -203,15 +198,13 @@ static int do_bind(JanetArgs args, struct mg_connection **connout,
         janet_stacktrace(fiber, "mongooose binding", out);
     }
     *connout = conn;
-    JANET_RETURN(args, args.v[0]);
 }
 
-static int cfun_bind_http(JanetArgs args) {
+static Janet cfun_bind_http(int32_t argc, Janet *argv) {
     struct mg_connection *conn = NULL;
-    int status = do_bind(args, &conn, http_handler);
-    if (status) return status;
+    do_bind(argc, argv, &conn, http_handler);
     mg_set_protocol_http_websocket(conn);
-    return status;
+    return argv[0];
 }
 
 static const JanetReg cfuns[] = {
@@ -224,10 +217,9 @@ static const JanetReg cfuns[] = {
 extern const unsigned char *circlet_lib_embed;
 extern size_t circlet_lib_embed_size;
 
-JANET_MODULE_ENTRY (JanetArgs args) {
-    JanetTable *env = janet_env(args);
+JANET_MODULE_ENTRY (JanetTable *env) {
     janet_cfuns(env, "circlet", cfuns);
-    return janet_dobytes(env, 
+    janet_dobytes(env, 
             circlet_lib_embed,
             circlet_lib_embed_size,
             "circlet_lib.janet",
