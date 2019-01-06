@@ -8,17 +8,25 @@ Circlet uses [mongoose](https://cesanta.com/) as the underlying HTTP server engi
 is a portable, low footprint, event based server library. The flexible build system requirements
 of mongoose make it very easy to embed in other C programs and libraries.
 
-# Building
+## Building
 
 Building requires [janet](https://github.com/janet-lang/janet) to be installed on the system.
 
 Use the build.janet script to build like
 
 ```sh
-janet build.janet
+janet build
 ```
 
-# Example
+## Testing
+
+Run a server on localhost with the following command
+
+```sh
+janet testserv
+```
+
+## Example
 
 The below example starts a very simple web server on port 8000.
 
@@ -35,7 +43,7 @@ The below example starts a very simple web server on port 8000.
 (circlet.server 8000 myserver)
 ```
 
-# License
+## License
 
 Unlike [janet](https://github.com/janet-lang/janet), circlet is licensed under
 the GPL license in accordance with mongoose. 
