@@ -40,7 +40,7 @@ The below example starts a very simple web server on port 8000.
   :headers {"Content-Type" "text/html"}
   :body "<!doctype html><html><body><h1>Hello.</h1></body></html>"})
 
-(circlet.server 8000 myserver)
+(circlet/server 8000 myserver)
 ```
 
 ## License

@@ -1,4 +1,4 @@
-#include <janet/janet.h>
+#include <janet.h>
 #include "mongoose.h"
 #include <stdio.h>
 
