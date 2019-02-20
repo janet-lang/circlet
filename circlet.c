@@ -20,7 +20,9 @@ static int connection_mark(void *p, size_t size) {
 static struct JanetAbstractType Connection_jt = {
     "mongoose.connection",
     NULL,
-    connection_mark
+    connection_mark,
+    NULL,
+    NULL
 };
 
 static int manager_gc(void *p, size_t size) {
@@ -47,7 +49,9 @@ static int manager_mark(void *p, size_t size) {
 static struct JanetAbstractType Manager_jt = {
     "mongoose.manager",
     manager_gc,
-    manager_mark
+    manager_mark,
+    NULL,
+    NULL
 };
 
 static Janet cfun_poll(int32_t argc, Janet *argv) {
@@ -165,7 +169,7 @@ static void http_handler(struct mg_connection *c, int ev, void *p) {
     Janet out;
     JanetFiberStatus status = janet_continue(fiber, evdata, &out);
     if (status != JANET_STATUS_DEAD && status != JANET_STATUS_PENDING) {
-        janet_stacktrace(fiber, "mongooose", out);
+        janet_stacktrace(fiber, out);
         return;
     }
     send_http(c, out);
@@ -187,7 +191,7 @@ static void do_bind(int32_t argc, Janet *argv, struct mg_connection **connout,
     const uint8_t *port = janet_getstring(argv, 1);
     JanetFunction *onConnection = janet_getfunction(argv, 2);
     struct mg_connection *conn = mg_bind(mgr, (const char *)port, handler);
-    JanetFiber *fiber = janet_fiber(onConnection, 64);
+    JanetFiber *fiber = janet_fiber(onConnection, 64, 0, NULL);
     ConnectionWrapper *cw = janet_abstract(&Connection_jt, sizeof(ConnectionWrapper));
     cw->conn = conn;
     cw->fiber = fiber;
@@ -195,7 +199,7 @@ static void do_bind(int32_t argc, Janet *argv, struct mg_connection **connout,
     Janet out;
     JanetFiberStatus status = janet_continue(fiber, janet_wrap_abstract(cw), &out);
     if (status != JANET_STATUS_PENDING) {
-        janet_stacktrace(fiber, "mongooose binding", out);
+        janet_stacktrace(fiber, out);
     }
     *connout = conn;
 }
