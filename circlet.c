@@ -22,6 +22,8 @@ static struct JanetAbstractType Connection_jt = {
     NULL,
     connection_mark,
     NULL,
+    NULL,
+    NULL,
     NULL
 };
 
@@ -50,6 +52,8 @@ static struct JanetAbstractType Manager_jt = {
     "mongoose.manager",
     manager_gc,
     manager_mark,
+    NULL,
+    NULL,
     NULL,
     NULL
 };
