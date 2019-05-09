@@ -1,0 +1,4 @@
+#!/bin/bash
+
+curl https://raw.githubusercontent.com/cesanta/mongoose/master/mongoose.c > mongoose.c
+curl https://raw.githubusercontent.com/cesanta/mongoose/master/mongoose.h > mongoose.h
