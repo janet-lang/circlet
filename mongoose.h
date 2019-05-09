@@ -23,7 +23,7 @@
 #ifndef CS_MONGOOSE_SRC_COMMON_H_
 #define CS_MONGOOSE_SRC_COMMON_H_
 
-#define MG_VERSION "6.12"
+#define MG_VERSION "6.14"
 
 /* Local tweaks, applied before any of Mongoose's own headers. */
 #ifdef MG_LOCALS
@@ -105,6 +105,7 @@
 #define MG_NET_IF_SIMPLELINK 2
 #define MG_NET_IF_LWIP_LOW_LEVEL 3
 #define MG_NET_IF_PIC32 4
+#define MG_NET_IF_NULL 5
 
 #define MG_SSL_IF_OPENSSL 1
 #define MG_SSL_IF_MBEDTLS 2
@@ -1530,7 +1531,7 @@ int sl_set_ssl_opts(int sock, struct mg_connection *nc);
 
 #endif /* SL_MAJOR_VERSION_NUM < 2 */
 
-int slfs_open(const unsigned char *fname, uint32_t flags);
+int slfs_open(const unsigned char *fname, uint32_t flags, uint32_t *token);
 
 #endif /* MG_NET_IF == MG_NET_IF_SIMPLELINK */
 
@@ -1944,7 +1945,7 @@ char *inet_ntoa(struct in_addr in);
 #include <stm32_sdk_hal.h>
 
 #define to64(x) strtoll(x, NULL, 10)
-#define INT64_FMT PRId64
+#define INT64_FMT "lld"
 #define SIZE_T_FMT "u"
 typedef struct stat cs_stat_t;
 #define DIRSEP '/'
@@ -2030,7 +2031,6 @@ typedef int sock_t;
 #if MG_NET_IF == MG_NET_IF_LWIP_LOW_LEVEL
 struct mg_mgr;
 struct mg_connection;
-uint32_t mg_lwip_get_poll_delay_ms(struct mg_mgr *mgr);
 void mg_lwip_set_keepalive_params(struct mg_connection *nc, int idle,
                                   int interval, int count);
 #endif
@@ -2239,6 +2239,8 @@ struct mg_str mg_mk_str_n(const char *s, size_t len);
 /* Macro for initializing mg_str. */
 #define MG_MK_STR(str_literal) \
   { str_literal, sizeof(str_literal) - 1 }
+#define MG_MK_STR_N(str_literal, len) \
+  { str_literal, len }
 #define MG_NULL_STR \
   { NULL, 0 }
 
@@ -2279,12 +2281,20 @@ int mg_strcmp(const struct mg_str str1, const struct mg_str str2);
 int mg_strncmp(const struct mg_str str1, const struct mg_str str2, size_t n);
 
 /*
+ * Free the string (assuming it was heap allocated).
+ */
+void mg_strfree(struct mg_str *s);
+
+/*
  * Finds the first occurrence of a substring `needle` in the `haystack`.
  */
 const char *mg_strstr(const struct mg_str haystack, const struct mg_str needle);
 
 /* Strip whitespace at the start and the end of s */
 struct mg_str mg_strstrip(struct mg_str s);
+
+/* Returns 1 if s starts with the given prefix. */
+int mg_str_starts_with(struct mg_str s, struct mg_str prefix);
 
 #ifdef __cplusplus
 }
@@ -2312,8 +2322,6 @@ struct mg_str mg_strstrip(struct mg_str s);
  */
 
 /*
- * === Memory Buffers
- *
  * Mbufs are mutable/growing memory buffers, like C++ strings.
  * Mbuf can append data to the end of a buffer or insert data into arbitrary
  * position in the middle of a buffer. The buffer grows automatically when
@@ -2366,6 +2374,14 @@ void mbuf_free(struct mbuf *);
 size_t mbuf_append(struct mbuf *, const void *data, size_t data_size);
 
 /*
+ * Appends data to the Mbuf and frees it (data must be heap-allocated).
+ *
+ * Returns the number of bytes appended or 0 if out of memory.
+ * data is freed irrespective of return value.
+ */
+size_t mbuf_append_and_free(struct mbuf *, void *data, size_t data_size);
+
+/*
  * Inserts data at a specified offset in the Mbuf.
  *
  * Existing data will be shifted forwards and the buffer will
@@ -2384,6 +2400,12 @@ void mbuf_remove(struct mbuf *, size_t data_size);
  * resize is not performed.
  */
 void mbuf_resize(struct mbuf *, size_t new_size);
+
+/* Moves the state from one mbuf to the other. */
+void mbuf_move(struct mbuf *from, struct mbuf *to);
+
+/* Removes all the data from mbuf (if any). */
+void mbuf_clear(struct mbuf *);
 
 /* Shrinks an Mbuf by resizing its `size` to `len`. */
 void mbuf_trim(struct mbuf *);
@@ -2625,6 +2647,8 @@ const char *mg_next_comma_list_entry(const char *list, struct mg_str *val,
 
 /*
  * Like `mg_next_comma_list_entry()`, but takes `list` as `struct mg_str`.
+ * NB: Test return value's .p, not .len. On last itreation that yields result
+ * .len will be 0 but .p will not. When finished, .p will be NULL.
  */
 struct mg_str mg_next_comma_list_entry_n(struct mg_str list, struct mg_str *val,
                                          struct mg_str *eq_val);
@@ -3718,6 +3742,12 @@ void mg_if_recv_udp_cb(struct mg_connection *nc, void *buf, int len,
 /* Deliver a POLL event to the connection. */
 int mg_if_poll(struct mg_connection *nc, double now);
 
+/*
+ * Return minimal timer value amoung connections in the manager.
+ * Returns 0 if there aren't any timers.
+ */
+double mg_mgr_min_timer(const struct mg_mgr *mgr);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
@@ -3875,6 +3905,7 @@ struct mg_mgr {
 #endif
   void *user_data; /* User data */
   int num_ifaces;
+  int num_calls;
   struct mg_iface **ifaces; /* network interfaces */
   const char *nameserver;   /* DNS server to use */
 };
@@ -3925,6 +3956,7 @@ struct mg_connection {
 #define MG_F_WANT_READ (1 << 6)          /* SSL specific */
 #define MG_F_WANT_WRITE (1 << 7)         /* SSL specific */
 #define MG_F_IS_WEBSOCKET (1 << 8)       /* Websocket specific */
+#define MG_F_RECV_AND_CLOSE (1 << 9) /* Drain rx and close the connection. */
 
 /* Flags that are settable by user */
 #define MG_F_SEND_AND_CLOSE (1 << 10)      /* Push remaining data and close  */
@@ -3987,17 +4019,17 @@ void mg_mgr_init_opt(struct mg_mgr *mgr, void *user_data,
  *
  * Closes and deallocates all active connections.
  */
-void mg_mgr_free(struct mg_mgr *);
+void mg_mgr_free(struct mg_mgr *mgr);
 
 /*
  * This function performs the actual IO and must be called in a loop
- * (an event loop). It returns the current timestamp.
+ * (an event loop). It returns number of user events generated (except POLLs).
  * `milli` is the maximum number of milliseconds to sleep.
  * `mg_mgr_poll()` checks all connections for IO readiness. If at least one
  * of the connections is IO-ready, `mg_mgr_poll()` triggers the respective
  * event handlers and returns.
  */
-time_t mg_mgr_poll(struct mg_mgr *, int milli);
+int mg_mgr_poll(struct mg_mgr *mgr, int milli);
 
 #if MG_ENABLE_BROADCAST
 /*
@@ -4010,7 +4042,7 @@ time_t mg_mgr_poll(struct mg_mgr *, int milli);
  * `func` callback function will be called by the IO thread for each
  * connection. When called, the event will be `MG_EV_POLL`, and a message will
  * be passed as the `ev_data` pointer. Maximum message size is capped
- * by `MG_CTL_MSG_MESSAGE_SIZE` which is set to 8192 bytes.
+ * by `MG_CTL_MSG_MESSAGE_SIZE` which is set to 8192 bytes by default.
  */
 void mg_broadcast(struct mg_mgr *mgr, mg_event_handler_t cb, void *data,
                   size_t len);
@@ -4748,6 +4780,14 @@ struct mg_http_multipart_part {
   struct mg_str data;
   int status; /* <0 on error */
   void *user_data;
+  /*
+   * User handler can indicate how much of the data was consumed
+   * by setting this variable. By default, it is assumed that all
+   * data has been consumed by the handler.
+   * If not all data was consumed, user's handler will be invoked again later
+   * with the remainder.
+   */
+  size_t num_data_consumed;
 };
 
 /* SSI call context */
@@ -4766,7 +4806,7 @@ struct mg_ssi_call_ctx {
 
 #if MG_ENABLE_HTTP_WEBSOCKET
 #define MG_EV_WEBSOCKET_HANDSHAKE_REQUEST 111 /* struct http_message * */
-#define MG_EV_WEBSOCKET_HANDSHAKE_DONE 112    /* NULL */
+#define MG_EV_WEBSOCKET_HANDSHAKE_DONE 112    /* struct http_message * */
 #define MG_EV_WEBSOCKET_FRAME 113             /* struct websocket_message * */
 #define MG_EV_WEBSOCKET_CONTROL_FRAME 114     /* struct websocket_message * */
 #endif
@@ -4805,7 +4845,9 @@ struct mg_ssi_call_ctx {
  * - MG_EV_WEBSOCKET_HANDSHAKE_REQUEST: server has received the WebSocket
  *   handshake request. `ev_data` contains parsed HTTP request.
  * - MG_EV_WEBSOCKET_HANDSHAKE_DONE: server has completed the WebSocket
- *   handshake. `ev_data` is `NULL`.
+ *   handshake. `ev_data` is a `struct http_message` containing the
+ *   client's request (server mode) or server's response (client).
+ *   In client mode handler can examine `resp_code`, which should be 101.
  * - MG_EV_WEBSOCKET_FRAME: new WebSocket frame has arrived. `ev_data` is
  *   `struct websocket_message *`
  *
