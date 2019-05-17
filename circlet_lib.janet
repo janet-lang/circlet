@@ -39,10 +39,9 @@
   (def mgr (manager))
   (def mw (middleware handler))
   (default ip-address "localhost")
-  (var interface nil)
-  (if (peg/match "*" ip-address)
-    (set interface (string port))
-    (set interface (string/format "%s:%d" ip-address port)))
+  (def interface (if (peg/match "*" ip-address)
+                   (string port)
+                   (string/format "%s:%d" ip-address port)))
   (defn evloop []
     (print (string/format "Circlet server listening on [%s:%d] ..." ip-address port))
     (var req (yield nil))

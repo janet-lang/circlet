@@ -11,7 +11,6 @@ Not Found.
 
 # Now build our server
 (circlet/server 
-  8000
   (->
       {"/thing" {:status 200
                  :headers {"Content-Type" "text/html"}
@@ -20,4 +19,5 @@ Not Found.
                  :headers {"Content-Type" "text/html"}
                  :body body}}
       circlet/router
-      circlet/logger))
+      circlet/logger)
+  8000)
