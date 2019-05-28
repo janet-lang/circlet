@@ -10,20 +10,21 @@ of mongoose make it very easy to embed in other C programs and libraries.
 
 ## Building
 
-Building requires [janet](https://github.com/janet-lang/janet) to be installed on the system.
-
-Use the build.janet script to build like
+Building requires [janet](https://github.com/janet-lang/janet) to be installed on the system, as
+well as the `jpm` tool (installed by default with latest installs).
 
 ```sh
-janet build
+jpm build
 ```
+
+You can also just run `jpm` to see a list of possible build commands.
 
 ## Testing
 
 Run a server on localhost with the following command
 
 ```sh
-janet testserv
+jpm test
 ```
 
 ## Example
