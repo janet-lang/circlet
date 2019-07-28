@@ -34,17 +34,17 @@ The below example starts a very simple web server on port 8000.
 ```lisp
 (import circlet)
 
-(defn myserver 
+(defn myserver
  "A simple HTTP server"
  [req]
  {:status 200
   :headers {"Content-Type" "text/html"}
   :body "<!doctype html><html><body><h1>Hello.</h1></body></html>"})
 
-(circlet/server 8000 myserver)
+(circlet/server myserver 8000)
 ```
 
 ## License
 
 Unlike [janet](https://github.com/janet-lang/janet), circlet is licensed under
-the GPL license in accordance with mongoose. 
+the GPL license in accordance with mongoose.
