@@ -197,6 +197,9 @@ static void do_bind(int32_t argc, Janet *argv, struct mg_connection **connout,
     const uint8_t *port = janet_getstring(argv, 1);
     JanetFunction *onConnection = janet_getfunction(argv, 2);
     struct mg_connection *conn = mg_bind(mgr, (const char *)port, handler);
+    if (NULL == conn) {
+        janet_panicf("could not bind to %s", port);
+    }
     JanetFiber *fiber = janet_fiber(onConnection, 64, 0, NULL);
     ConnectionWrapper *cw = janet_abstract(&Connection_jt, sizeof(ConnectionWrapper));
     cw->conn = conn;
@@ -227,7 +230,7 @@ static const JanetReg cfuns[] = {
 extern const unsigned char *circlet_lib_embed;
 extern size_t circlet_lib_embed_size;
 
-JANET_MODULE_ENTRY (JanetTable *env) {
+JANET_MODULE_ENTRY(JanetTable *env) {
     janet_cfuns(env, "circlet", cfuns);
     janet_dobytes(env, 
             circlet_lib_embed,
