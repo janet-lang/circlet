@@ -8,8 +8,11 @@
 
 (declare-native
   :name "circlet"
-  :embedded @["circlet_lib.janet"]
-  :source @["circlet.c" "mongoose.c"])
+  :embedded ["circlet_lib.janet"]
+  :lflags (if (= :windows (os/which))
+            # for now, assume 32 bit compilation.
+            ["advapi32.lib"])
+  :source ["circlet.c" "mongoose.c"])
 
 (phony "update-mongoose" []
       (os/shell "curl https://raw.githubusercontent.com/cesanta/mongoose/master/mongoose.c > mongoose.c")
