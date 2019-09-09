@@ -33,6 +33,23 @@
     (print proto " " method " " status " " fulluri " elapsed " elapsed "ms")
     ret))
 
+(defn cookies
+  "Parses cookies into the table under :cookies key"
+  [nextmw]
+  (fn [req]
+    (-> req
+      (put :cookies
+           (or
+             (-?>> [:headers "Cookie"] 
+                   (get-in req) 
+                   (string/split ";") 
+                   (map |(string/split "=" $)) 
+                   flatten 
+                   (map string/trim) 
+                   (apply table))
+             {}))
+     nextmw)))
+
 (defn server 
   "Creates a simple http server"
   [handler port &opt ip-address]
