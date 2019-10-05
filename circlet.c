@@ -199,6 +199,7 @@ static void send_http(struct mg_connection *c, Janet res, void *ev_data) {
             }
             break;
     }
+    mg_printf(c, "\r\n");
     c->flags |= MG_F_SEND_AND_CLOSE;
 }
 
