@@ -21,11 +21,9 @@ static struct JanetAbstractType Connection_jt = {
     "mongoose.connection",
     NULL,
     connection_mark,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+#ifdef JANET_ATEND_GCMARK
+    JANET_ATEND_GCMARK
+#endif
 };
 
 static int manager_gc(void *p, size_t size) {
@@ -53,11 +51,9 @@ static struct JanetAbstractType Manager_jt = {
     "mongoose.manager",
     manager_gc,
     manager_mark,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+#ifdef JANET_ATEND_GCMARK
+    JANET_ATEND_GCMARK
+#endif
 };
 
 static Janet cfun_poll(int32_t argc, Janet *argv) {
