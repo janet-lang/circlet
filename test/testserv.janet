@@ -4,7 +4,8 @@
 (circlet/server 
   (->
       {"/thing" {:status 200
-                 :headers {"Content-Type" "text/html; charset=utf-8"}
+                 :headers {"Content-Type" "text/html; charset=utf-8"
+                           "Thang" [1 2 3 4 5]}
                  :body "<!doctype html><html><body>
                     <h1>Is a thing.</h1>
                     <form action=\"bork\">

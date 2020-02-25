@@ -91,9 +91,23 @@ static Janet build_http_request(struct mg_connection *c, struct http_message *hm
     for (int i = 0; i < MG_MAX_HTTP_HEADERS; i++) {
         if (hm->header_names[i].len == 0)
             break;
-        janet_table_put(headers, 
-                mg2janetstr(hm->header_names[i]),
-                mg2janetstr(hm->header_values[i]));
+        Janet key = mg2janetstr(hm->header_names[i]);
+        Janet value = mg2janetstr(hm->header_values[i]);
+        Janet header = janet_table_get(headers, key);
+        switch (janet_type(header)) {
+            case JANET_NIL:
+                janet_table_put(headers, key, value);
+                break;
+            case JANET_ARRAY:
+                janet_array_push(janet_unwrap_array(header), value);
+                break;
+            default:
+                {
+                    Janet newHeader[2] = { header, value };
+                    janet_table_put(headers, key, janet_wrap_array(janet_array_n(newHeader, 2)));
+                    break;
+                }
+        }
     }
     janet_table_put(payload, janet_ckeywordv("headers"), janet_wrap_table(headers));
     return janet_wrap_table(payload);
@@ -184,8 +198,19 @@ static void send_http(struct mg_connection *c, Janet res, void *ev_data) {
                         kv;
                         kv = janet_dictionary_next(headerkvs, headercap, kv)) {
                     const uint8_t *name = janet_to_string(kv->key);
-                    const uint8_t *value = janet_to_string(kv->value);
-                    mg_printf(c, "%s: %s\r\n", (const char *)name, (const char *)value);
+                    int32_t header_len;
+                    const Janet *header_items;
+                    if (janet_indexed_view(kv->value, &header_items, &header_len)) {
+                        /* Array-like of headers */
+                        for (int32_t i = 0; i < header_len; i++) {
+                            const uint8_t *value = janet_to_string(header_items[i]);
+                            mg_printf(c, "%s: %s\r\n", (const char *)name, (const char *)value);
+                        }
+                    } else {
+                        /* Single header */
+                        const uint8_t *value = janet_to_string(kv->value);
+                        mg_printf(c, "%s: %s\r\n", (const char *)name, (const char *)value);
+                    }
                 }
 
                 if (bodylen) {
