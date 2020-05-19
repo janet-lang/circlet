@@ -261,12 +261,20 @@ static Janet cfun_manager(int32_t argc, Janet *argv) {
 static void do_bind(int32_t argc, Janet *argv, struct mg_connection **connout,
         void (*handler)(struct mg_connection *, int, void *)) {
     janet_fixarity(argc, 3);
+    
+    /* We use opts, so that we can read the error reason from mongoose if bind fails.
+    As described here https://github.com/cesanta/mongoose/issues/983 */
+    struct mg_bind_opts opts;
+    memset(&opts, 0, sizeof(opts));
+    const char *err = NULL;
+    opts.error_string = &err;
+
     struct mg_mgr *mgr = janet_getabstract(argv, 0, &Manager_jt);
     const uint8_t *port = janet_getstring(argv, 1);
     JanetFunction *onConnection = janet_getfunction(argv, 2);
-    struct mg_connection *conn = mg_bind(mgr, (const char *)port, handler);
+    struct mg_connection *conn = mg_bind_opt(mgr, (const char *)port, handler, opts);
     if (NULL == conn) {
-        janet_panicf("could not bind to %s", port);
+        janet_panicf("could not bind to %s, reason being: %s", port, err);
     }
     JanetFiber *fiber = janet_fiber(onConnection, 64, 0, NULL);
     ConnectionWrapper *cw = janet_abstract(&Connection_jt, sizeof(ConnectionWrapper));

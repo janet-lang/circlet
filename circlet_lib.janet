@@ -57,7 +57,7 @@
   [handler port &opt ip-address]
   (def mgr (manager))
   (def mw (middleware handler))
-  (default ip-address "localhost")
+  (default ip-address "127.0.0.1")
   (def interface (if (peg/match "*" ip-address)
                    (string port)
                    (string/format "%s:%d" ip-address port)))
