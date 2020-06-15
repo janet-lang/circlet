@@ -241,8 +241,8 @@ static void http_handler(struct mg_connection *c, int ev, void *p) {
     cw = (ConnectionWrapper *)(c->user_data);
     fiber = cw->fiber;
     Janet out;
-    JanetFiberStatus status = janet_continue(fiber, evdata, &out);
-    if (status != JANET_STATUS_DEAD && status != JANET_STATUS_PENDING) {
+    JanetSignal status = janet_continue(fiber, evdata, &out);
+    if (status != JANET_SIGNAL_OK && status != JANET_SIGNAL_YIELD) {
         janet_stacktrace(fiber, out);
         return;
     }
@@ -274,8 +274,8 @@ static void do_bind(int32_t argc, Janet *argv, struct mg_connection **connout,
     cw->fiber = fiber;
     conn->user_data = cw;
     Janet out;
-    JanetFiberStatus status = janet_continue(fiber, janet_wrap_abstract(cw), &out);
-    if (status != JANET_STATUS_PENDING) {
+    JanetSignal status = janet_continue(fiber, janet_wrap_abstract(cw), &out);
+    if (status != JANET_SIGNAL_YIELD) {
         janet_stacktrace(fiber, out);
     }
     *connout = conn;
