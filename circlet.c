@@ -216,7 +216,8 @@ static void send_http(struct mg_connection *c, Janet res, void *ev_data) {
                 if (bodylen) {
                     mg_printf(c, "Content-Length: %d\r\n", bodylen);
                 }
-                mg_printf(c, "\r\n%.*s", bodylen, (const char *)bodybytes);
+                mg_printf(c, "\r\n");
+                if (bodylen) mg_send(c, bodybytes, bodylen);
             }
             break;
     }
