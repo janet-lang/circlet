@@ -13,6 +13,8 @@
                       <input type=\"submit\" value=\"Submit\">
                     </form>
                   </body></html>"}
+       "/blob" {:status 200
+                :body @"123\0123"}
        "/redirect" {:status 302
                     :headers {"Location" "/thing"}}
        :default {:kind :static
