@@ -10,7 +10,7 @@ of mongoose make it very easy to embed in other C programs and libraries.
 
 ## Installing
 
-You can add circlet as dependency in your `project.janet`:
+You can add Circlet as a dependency in your `project.janet`:
 
 ```clojure
 (declare-project
@@ -29,30 +29,32 @@ jpm install circlet
 
 ### Creating a server
 
-Library provides means to create http server with `circlet/server` function with
-signarure: `(circlet/server handler port &opt ip-address)`. Parameters are:
+You can create a HTTP server using the `circlet/server` function. The function is
+of the form `(circlet/server handler port &opt ip-address)` and takes the
+following parameters:
 
-- `handler` function which will handle the incoming http request table, and
-returns http response table. See below.
-- `port` TCP port on which will the server listen for upcomming requests
-- `ip-address` optional IP address on which server will listen. When not
-provided defaults to 127.0.0.1. It can be * and server will then listen on all
-available IP addresses
+- `handler` function that takes the incoming HTTP request object (explained in
+  greater detail below) and returns the HTTP response object.
+- `port` number of the port on which the server will listen for incoming
+  requests.
+- `ip-address` optional string representing the IP address on which the server
+  will listen (defaults to `“127.0.0.1”`). The address `“*”` will cause the
+  server to listen on all available IP addresses.```
 
-Server runs immediately after creation on given host and port.
+The server runs immediately after creation.
 
 ### Request table
 
-The only argument, which `handler` function from previous section accepts is
-the request. It is Janet `table` containing all the information about the
-request. It contains following keys:
+The `handler` function takes a single parameter representing the request. The
+request is a Janet table containing all the information about the request. It
+contains the following keys:
 
 - `:uri` requested URI
 - `:method` HTTP method of the request as a Janet string (e.g. "GET", "POST")
 - `:protocol` version of the HTTP protocol used for request
-- `:headers` Janet table containing all HTTP headers sent with the request. Keys
- in this table are Janet strings with standard header's name (e.g. "Host",
-"Accept"). Values are the HEADER content.
+- `:headers` HTTP headers sent with the request as a Janet table. Keys in this
+  table are Janet strings with standard header's name (e.g. "Host", “Accept").
+  Values are the values in the HTTP header.
 - `:body` body of the HTTP request
 - `:query-string` query string part of the requested URI
 - `:connection` internal mongoose connection serving this request
@@ -60,39 +62,38 @@ request. It contains following keys:
 
 ### Response table
 
-Return value of the `handler` function must be Janet `table` containing at least
-the `status` key corresponding to HTTP status of the response (e.g. 200 for the
-success).
+The return value of the `handler` function must be a Janet table containing at
+least the `status` key with an integer value that corresponds to the HTTP status
+of the response (e.g. 200 for success).
 
-Other keys could be:
+Other possible keys include:
 
-- `:body` the body of the HTTP response (e.g. HTML code for the page, JSON doc)
-- `:headers` a Janet `table` or `struct` with standard HTTP headers. Structure
-is the same as in HTTP request case above.
+- `:body` the body of the HTTP response (e.g. a string in HTML or JSON)
+- `:headers` a Janet table or struct with standard HTTP headers. The structure is
+  the same as the HTTP request case described above.
 
-### Midlewares
+### Middleware
 
-The last functionality that Circlet provides is creating middlewares. You can
-think about middlewares as chain for consuming the HTTP request. You can look at
-the `handle` function as a middleware.
+Circlet also allows for the creation of different “middleware”. Pieces of middleware can be thought of as links in a chain of functions that are used to consume the HTTP request. The `handler` function can be thought of as a piece of middleware and other middleware should match the signature and return type of the `handler` function, i.e. accept and return a Janet table.
 
-Circlet provides `circlet/middleware` function which coerces any function or
-table to middleware. Signature and the return value of the middleware must be the same
-as for the `handler` function. Midlewares are often higher order functions
-(meaning they return another function) for parametrization at their create time.
+Middleware can be created in one of two ways. A user can define a function with
+the appropriate signature and return type or use Circlet’s `circlet/middleware`
+function to coerce an argument into a piece of middleware. Middleware pieces are
+often higher-order functions (meaning that they return another function). This
+allows for parameterization at creation time.
 
-#### Provided middlewares
+#### Provided middleware
 
-There are three basic middlewares provided by the Circlet:
+There are three basic pieces of middleware provided by Circlet:
 
-- `(circlet/router routes)` simple routing facility. This function takes Janet
-table containing the routes. Each key should be Janet string with URI (e.g.
-"/", "/posts") and its value `handler` function same as in the text above.
-- `(circlet/logger nextmw)` simple loggin facility. It just prints the request
-info on `stdout`. The only argument is the next middleware. It is usually
-`handler` function or the `router` middleware.
+- `(circlet/router routes)` simple routing facility. This function takes a Janet
+  table containing the routes. Each key should be a Janet string matching a URI
+  (e.g. `”/“`, `”/posts"`) with a value that is a function of the same form as
+  the `handler` function described above.
+- `(circlet/logger nextmw)` simple logging facility. This function prints the
+  request info on `stdout`. The only argument is the next middleware.
 - `(circlet/cookies nextmw)` middleware which extracts the cookies from the HTTP
-header and puts it to request parameter under `:cookies` key.
+  header and stores the value under the `:cookies` key in the request object.
 
 ## Example
 
