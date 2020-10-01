@@ -1,4 +1,4 @@
-# circlet
+# Circlet
 
 Circlet is an HTTP and networking library for the
 [janet](https://github.com/janet-lang/janet) language.
@@ -15,14 +15,17 @@ in other C programs and libraries.
 
 You can add Circlet as a dependency in your `project.janet`:
 
-```clojure (declare-project
+```clojure
+(declare-project
   :name "web framework" :description "A framework for web development"
   :dependencies ["https://github.com/janet-lang/circlet.git"])
 ```
 
 You can also install it system-wide with `jpm`:
 
-```sh jpm install circlet ```
+```
+sh jpm install circlet
+```
 
 ## Usage
 
@@ -33,32 +36,33 @@ function is of the form `(circlet/server handler port &opt ip-address)`
 and takes the following parameters:
 
 - `handler` function that takes the incoming HTTP request object (explained in
-  greater detail below) and returns the HTTP response object.
+    greater detail below) and returns the HTTP response object.
 - `port` number of the port on which the server will listen for incoming
-  requests.
+    requests.
 - `ip-address` optional string representing the IP address on which the server
-  will listen (defaults to `“127.0.0.1”`). The address `“*”` will
-  cause the server to listen on all available IP addresses.
+    will listen (defaults to `“127.0.0.1”`). The address `“*”` will
+    cause the server to listen on all available IP addresses.
 
 The server runs immediately after creation.
 
-### Request table
+### Request
 
 The `handler` function takes a single parameter representing the request. The
 request is a Janet table containing all the information about the request. It
 contains the following keys:
 
-- `:uri` requested URI - `:method` HTTP method of the request as a Janet
-string (e.g. "GET", "POST") - `:protocol` version of the HTTP protocol
-used for request - `:headers` HTTP headers sent with the request as a Janet
-table. Keys in this
-  table are Janet strings with standard header's name (e.g. "Host",
-  “Accept").  Values are the values in the HTTP header.
-- `:body` body of the HTTP request - `:query-string` query string part of the
-requested URI - `:connection` internal mongoose connection serving this request
+- `:uri` requested URI
+- `:method` HTTP method of the request as a Janet string (e.g. "GET", "POST")
+- `:protocol` version of the HTTP protocol used for request
+- `:headers` HTTP headers sent with the request as a Janet table. Keys in this
+    table are Janet strings with standard header's name (e.g. "Host", “Accept").
+    Values are the values in the HTTP header.
+- `:body` body of the HTTP request
+- `:query-string` query string part of the requested URI
+- `:connection` internal mongoose connection serving this request
 
 
-### Response table
+### Response
 
 The return value of the `handler` function must be a Janet table containing
 at least the `status` key with an integer value that corresponds to the HTTP
@@ -66,9 +70,9 @@ status of the response (e.g. 200 for success).
 
 Other possible keys include:
 
-- `:body` the body of the HTTP response (e.g. a string in HTML or JSON) -
-`:headers` a Janet table or struct with standard HTTP headers. The structure is
-  the same as the HTTP request case described above.
+- `:body` the body of the HTTP response (e.g. a string in HTML or JSON)
+- `:headers` a Janet table or struct with standard HTTP headers. The structure
+    is the same as the HTTP request case described above.
 
 ### Middleware
 
@@ -89,16 +93,15 @@ creation time.
 
 There are three basic pieces of middleware provided by Circlet:
 
-- `(circlet/router routes)` simple routing facility. This function takes
-a Janet
-  table containing the routes. Each key should be a Janet string matching
-  a URI (e.g. `”/“`, `”/posts"`) with a value that is a function of
-  the same form as the `handler` function described above.
-- `(circlet/logger nextmw)` simple logging facility. This function prints the
-  request info on `stdout`. The only argument is the next middleware.
-- `(circlet/cookies nextmw)` middleware which extracts the cookies from
-the HTTP
-  header and stores the value under the `:cookies` key in the request object.
+- `(circlet/router routes)` simple routing facility. This function takes a
+    Janet table containing the routes. Each key should be a Janet string matching
+    a URI (e.g. `”/“`, `”/posts"`) with a value that is a function of the
+    same form as the `handler` function described above.
+- `(circlet/logger nextmw)` simple logging facility. This function prints
+    the request info on `stdout`. The only argument is the next middleware.
+- `(circlet/cookies nextmw)` middleware which extracts the cookies from the
+    HTTP header and stores the value under the `:cookies` key in the request
+    object.
 
 ## Example
 
@@ -122,7 +125,9 @@ The below example starts a very simple web server on port 8000.
 Building requires [Janet](https://github.com/janet-lang/janet) to be installed
 on the system, as well as the `jpm` tool (installed by default with Janet).
 
-```sh jpm build ```
+```sh
+jpm build
+```
 
 You can also just run `jpm` to see a list of possible build commands.
 
@@ -130,11 +135,13 @@ You can also just run `jpm` to see a list of possible build commands.
 
 Run a server on localhost with the following command
 
-```sh jpm test ```
+```sh
+jpm test
+```
 
 
 
 ## License
 
-Unlike [janet](https://github.com/janet-lang/janet), circlet is licensed
+Unlike [janet](https://github.com/janet-lang/janet), Circlet is licensed
 under the GPL license in accordance with mongoose.
