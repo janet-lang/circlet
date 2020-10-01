@@ -61,7 +61,6 @@ contains the following keys:
 - `:query-string` query string part of the requested URI
 - `:connection` internal mongoose connection serving this request
 
-
 ### Response
 
 The return value of the `handler` function must be a Janet table containing
@@ -73,6 +72,15 @@ Other possible keys include:
 - `:body` the body of the HTTP response (e.g. a string in HTML or JSON)
 - `:headers` a Janet table or struct with standard HTTP headers. The structure
     is the same as the HTTP request case described above.
+
+There is also special key `:kind` you can use. There are two possible values for
+this key:
+
+- `:file` for serving a file from the filesystem. The filename is specified by
+    the `:file` key. You can specify `:mime` key with value of corresponding
+    mime type, it defaults to text/html.
+- `:static` for serving static file from the filesystem. You have to provide
+    `:root` key with value of the path you want to serve.
 
 ### Middleware
 
@@ -111,9 +119,9 @@ The below example starts a very simple web server on port 8000.
 (import circlet)
 
 (defn myserver
- "A simple HTTP server" [request] {:status 200
-  :headers {"Content-Type" "text/html"} :body "<!doctype
-  html><html><body><h1>Hello.</h1></body></html>"})
+ "A simple HTTP server" [request]
+ {:status 200
+  :headers {"Content-Type" "text/html"} :body "<!doctype html><html><body><h1>Hello.</h1></body></html>"})
 
 (circlet/server myserver 8000)
 ```
@@ -138,8 +146,6 @@ Run a server on localhost with the following command
 ```sh
 jpm test
 ```
-
-
 
 ## License
 
