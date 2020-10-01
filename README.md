@@ -147,6 +147,9 @@ Run a server on localhost with the following command
 jpm test
 ```
 
+This example is more involved, and shows all the functionality described in this
+document.
+
 ## License
 
 Unlike [janet](https://github.com/janet-lang/janet), Circlet is licensed
