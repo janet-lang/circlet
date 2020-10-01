@@ -8,16 +8,18 @@
     (fn [&] x)))
 
 (defn router
-  "Creates a router middleware"
+  "Creates a router middleware. Route parameter must be table or struct
+  where keys are URI paths and values are handler functions for given URI"
   [routes]
-  (fn [req] 
+  (fn [req]
     (def r (or
              (get routes (get req :uri))
              (get routes :default)))
     (if r ((middleware r) req) 404)))
 
 (defn logger
-  "Creates a logging middleware"
+  "Creates a logging middleware. nextmw parameter is the handler function
+  of the next middleware"
   [nextmw]
   (fn [req]
     (def {:uri uri
@@ -34,33 +36,37 @@
     ret))
 
 (defn cookies
-  "Parses cookies into the table under :cookies key"
+  "Parses cookies into the table under :cookies key. nextmw parameter is
+  the handler function of the next middleware"
   [nextmw]
-  (def grammar 
-    (peg/compile 
+  (def grammar
+    (peg/compile
       {:content '(some (if-not (set "=;") 1))
-       :eql "=" 
+       :eql "="
        :sep '(between 1 2 (set "; "))
        :main '(some (* (<- :content) :eql (<- :content) (? :sep)))}))
   (fn [req]
     (-> req
-      (put :cookies
-           (or (-?>> [:headers "Cookie"] 
-                   (get-in req) 
-                   (peg/match grammar) 
-                   (apply table))
-               {}))
-     nextmw)))
+        (put :cookies
+             (or (-?>> [:headers "Cookie"]
+                       (get-in req)
+                       (peg/match grammar)
+                       (apply table))
+                 {}))
+        nextmw)))
 
-(defn server 
-  "Creates a simple http server"
+(defn server
+  "Creates a simple http server. handler parameter is the function handling the
+  requests. It could be middleware. port is the number of the port the server
+  will listen on. ip-address is optional IP address the server will listen on"
   [handler port &opt ip-address]
   (def mgr (manager))
   (def mw (middleware handler))
   (default ip-address "127.0.0.1")
-  (def interface (if (peg/match "*" ip-address)
-                   (string port)
-                   (string/format "%s:%d" ip-address port)))
+  (def interface
+    (if (peg/match "*" ip-address)
+      (string port)
+      (string/format "%s:%d" ip-address port)))
   (defn evloop []
     (print (string/format "Circlet server listening on [%s:%d] ..." ip-address port))
     (var req (yield nil))
