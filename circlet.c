@@ -1,6 +1,9 @@
 #include <janet.h>
 #include "mongoose.h"
 #include <stdio.h>
+#if !defined(__FreeBSD__)
+#include <alloca.h>
+#endif
 
 typedef struct {
     struct mg_connection *conn;
@@ -295,10 +298,78 @@ static Janet cfun_bind_http(int32_t argc, Janet *argv) {
     return argv[0];
 }
 
+static int decode_nibble(uint8_t b) {
+  if (b >= '0' && b <= '9')
+    return b - '0';
+  if (b >= 'a' && b <= 'f')
+    return 10 + b - 'a';
+  if (b >= 'A' && b <= 'F')
+    return 10 + b - 'A';
+  return 0;
+}
+
+static Janet unescape_x_www_form_urlencoded(const uint8_t *str, size_t len) {
+  size_t nwritten = 0;
+  uint8_t *tmp = NULL;
+#define NALLOCA 128
+  if (len >= NALLOCA)
+    tmp = janet_smalloc(len);
+  else
+    tmp = alloca(len);
+
+  int st = 0;
+  uint8_t nb1, nb2;
+  for (size_t i = 0; i < len; i++) {
+    uint8_t c = str[i];
+    switch (st) {
+    case 0:
+      switch (c) {
+      case '+':
+        tmp[nwritten++] = ' ';
+        break;
+      case '%':
+        st = 1;
+        break;
+      default:
+        tmp[nwritten++] = c;
+        break;
+      }
+      break;
+    case 1:
+      st = 2;
+      nb1 = decode_nibble(c);
+      break;
+    case 2:
+      st = 0;
+      nb2 = decode_nibble(c);
+      tmp[nwritten++] = (nb1 << 4) | nb2;
+      break;
+    default:
+      abort();
+    }
+  }
+
+  Janet unescaped = janet_stringv(tmp, nwritten);
+
+  if (len >= NALLOCA)
+    janet_sfree(tmp);
+
+  return unescaped;
+#undef NALLOCA
+}
+
+static Janet cfun_unescape_x_www_form_urlencoded(int argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    JanetByteView bv = janet_getbytes(argv, 0);
+    return unescape_x_www_form_urlencoded(bv.bytes, bv.len);
+}
+
+
 static const JanetReg cfuns[] = {
     {"manager", cfun_manager, NULL},
     {"poll", cfun_poll, NULL},
     {"bind-http", cfun_bind_http, NULL},
+    {"unescape-x-www-form-urlencoded", cfun_unescape_x_www_form_urlencoded, NULL},
     {NULL, NULL, NULL}
 };
 
