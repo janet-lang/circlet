@@ -40,11 +40,12 @@
   the handler function of the next middleware"
   [nextmw]
   (def grammar
-    (peg/compile
-      {:content '(some (if-not (set "=;") 1))
-       :eql "="
-       :sep '(between 1 2 (set "; "))
-       :main '(some (* (<- :content) :eql (<- :content) (? :sep)))}))
+    (comptime
+      (peg/compile
+        {:content '(some (if-not (set "=;") 1))
+         :eql "="
+         :sep '(between 1 2 (set "; "))
+         :main '(some (* (<- :content) :eql (<- :content) (? :sep)))})))
   (fn [req]
     (-> req
         (put :cookies
@@ -54,6 +55,20 @@
                        (apply table))
                  {}))
         nextmw)))
+
+(defn parse-x-www-form-urlencoded
+  [q]
+  "Parse x-www-form-urlencoded bytes returning a table or nil."
+  (def grammar
+    (comptime
+      (peg/compile ~{
+        :main (sequence (opt :query) (not 1))
+        :query (sequence :pair (any (sequence "&" :pair)))
+        :pair (sequence (cmt (capture :key) ,unescape-x-www-form-urlencoded) "=" (cmt (capture :value) ,unescape-x-www-form-urlencoded))
+        :key (any (sequence (not "=") 1))
+        :value (any (sequence (not "&") 1))})))
+  (when-let [matches (peg/match grammar q)]
+    (table ;matches)))
 
 (defn server
   "Creates a simple http server. handler parameter is the function handling the
