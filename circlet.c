@@ -298,7 +298,7 @@ static Janet cfun_bind_http(int32_t argc, Janet *argv) {
 
 
 static int is_websocket(const struct mg_connection *nc) {
-  return nc->flags & MG_F_IS_WEBSOCKET;
+    return nc->flags & MG_F_IS_WEBSOCKET;
 }
 
 static Janet build_websocket_event(struct mg_connection *c, Janet event, struct websocket_message *wm) {
@@ -369,15 +369,15 @@ static Janet cfun_bind_http_websocket(int32_t argc, Janet *argv) {
 }
 
 static Janet cfun_broadcast(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 2);
-  struct mg_mgr *mgr = janet_getabstract(argv, 0, &Manager_jt);
-  const char *buf = janet_getcstring(argv, 1);
-  struct mg_connection *c;
-  for (c = mg_next(mgr, NULL); c != NULL; c = mg_next(mgr, c)) {
-    mg_send_websocket_frame(c, WEBSOCKET_OP_TEXT, buf, strlen(buf));
-  }
+    janet_fixarity(argc, 2);
+    struct mg_mgr *mgr = janet_getabstract(argv, 0, &Manager_jt);
+    const char *buf = janet_getcstring(argv, 1);
+    struct mg_connection *c;
+    for (c = mg_next(mgr, NULL); c != NULL; c = mg_next(mgr, c)) {
+      mg_send_websocket_frame(c, WEBSOCKET_OP_TEXT, buf, strlen(buf));
+    }
 
-  return argv[0];
+    return argv[0];
 }
 
 static const JanetReg cfuns[] = {
