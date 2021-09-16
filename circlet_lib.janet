@@ -74,3 +74,30 @@
       (set req (yield (mw req)))))
   (bind-http mgr interface evloop)
   (while true (poll mgr 2000)))
+
+
+(defn server-websocket
+  "Creates a simple http+websocket server. handler parameter is the function handling the
+  requests. It could be middleware. websocket-handler is the function handling websocket
+  messages. port is the number of the port the server
+  will listen on. ip-address is optional IP address the server will listen on"
+  [handler websocket-handler port &opt ip-address]
+  (def mgr (manager))
+  (def mw (middleware handler))
+  (def ws-mw (middleware websocket-handler))
+  (default ip-address "127.0.0.1")
+  (def interface
+    (if (peg/match "*" ip-address)
+      (string port)
+      (string/format "%s:%d" ip-address port)))
+  (defn evloop []
+    (print (string/format "Circlet server listening on [%s:%d] ..." ip-address port))
+    (var req (yield nil))
+    (while true
+      (case (req :protocol)
+        "websocket"
+        (set req (yield (ws-mw mgr req)))
+
+        (set req (yield (mw req))))))
+  (bind-http-websocket mgr interface evloop)
+  (while true (poll mgr 2000)))

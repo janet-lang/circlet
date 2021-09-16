@@ -295,10 +295,97 @@ static Janet cfun_bind_http(int32_t argc, Janet *argv) {
     return argv[0];
 }
 
+
+
+static int is_websocket(const struct mg_connection *nc) {
+  return nc->flags & MG_F_IS_WEBSOCKET;
+}
+
+static Janet build_websocket_event(struct mg_connection *c, Janet event, struct websocket_message *wm) {
+    JanetTable *payload;
+    if (wm) {
+       payload = janet_table(4);
+       janet_table_put(payload, janet_ckeywordv("data"), janet_stringv((const uint8_t *) wm->data, wm->size));
+    } else {
+       payload = janet_table(3);
+    }
+
+    janet_table_put(payload, janet_ckeywordv("event"), event);
+    janet_table_put(payload, janet_ckeywordv("protocol"), janet_cstringv("websocket"));
+    janet_table_put(payload, janet_ckeywordv("connection"), janet_wrap_abstract(c->user_data));
+    return janet_wrap_table(payload);
+}
+
+/* The dispatching event handler. This handler is what
+ * is presented to mongoose, but it dispatches to dynamically
+ * defined handlers. */
+static void http_websocket_handler(struct mg_connection *c, int ev, void *p) {
+    Janet evdata;
+
+    switch (ev) {
+        default:
+            return;
+
+        case MG_EV_HTTP_REQUEST: {
+            http_handler(c, ev, p);
+            return;
+        }
+
+        case MG_EV_WEBSOCKET_HANDSHAKE_DONE: {
+            evdata = build_websocket_event(c, janet_ckeywordv("open"), NULL);
+            break;
+        }
+
+        case MG_EV_WEBSOCKET_FRAME: {
+            struct websocket_message *wm = (struct websocket_message *) p;
+            evdata = build_websocket_event(c, janet_ckeywordv("message"), wm);
+            break;
+        }
+
+        case MG_EV_CLOSE: {
+            evdata = build_websocket_event(c, janet_ckeywordv("close"), NULL);
+            break;
+        }
+
+    }
+
+    ConnectionWrapper *cw;
+    JanetFiber *fiber;
+    cw = (ConnectionWrapper *)(c->user_data);
+    fiber = cw->fiber;
+    Janet out;
+    JanetSignal status = janet_continue(fiber, evdata, &out);
+    if (status != JANET_SIGNAL_OK && status != JANET_SIGNAL_YIELD) {
+        janet_stacktrace(fiber, out);
+        return;
+    }
+}
+
+static Janet cfun_bind_http_websocket(int32_t argc, Janet *argv) {
+    struct mg_connection *conn = NULL;
+    do_bind(argc, argv, &conn, http_websocket_handler);
+    mg_set_protocol_http_websocket(conn);
+    return argv[0];
+}
+
+static Janet cfun_broadcast(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 2);
+  struct mg_mgr *mgr = janet_getabstract(argv, 0, &Manager_jt);
+  const char *buf = janet_getcstring(argv, 1);
+  struct mg_connection *c;
+  for (c = mg_next(mgr, NULL); c != NULL; c = mg_next(mgr, c)) {
+    mg_send_websocket_frame(c, WEBSOCKET_OP_TEXT, buf, strlen(buf));
+  }
+
+  return argv[0];
+}
+
 static const JanetReg cfuns[] = {
     {"manager", cfun_manager, NULL},
     {"poll", cfun_poll, NULL},
     {"bind-http", cfun_bind_http, NULL},
+    {"broadcast", cfun_broadcast, NULL},
+    {"bind-http-websocket", cfun_bind_http_websocket, NULL},
     {NULL, NULL, NULL}
 };
 
